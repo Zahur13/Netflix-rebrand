@@ -12,18 +12,74 @@ import {
   Headphones,
   Film,
 } from "lucide-react";
-import Logo from "../public/vite.png";
+import Logo from "/vite.png";
 
 const NetflixRebrand = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [currentShow, setCurrentShow] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [trendingMovies, setTrendingMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showNotification, setShowNotification] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Auto-hide notification after 5 seconds
+  useEffect(() => {
+    if (showNotification) {
+      const timer = setTimeout(() => {
+        setShowNotification(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showNotification]);
+
+  // Smooth scroll function
+  const scrollToSection = (sectionId) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      window.scrollTo({
+        top: section.offsetTop - 80, // Offset for the navbar
+        behavior: "smooth",
+      });
+      setIsMenuOpen(false); // Close mobile menu if open
+    }
+  };
+
+  // Fetch trending movies from TMDB API
+  useEffect(() => {
+    const fetchTrendingMovies = async () => {
+      setIsLoading(true);
+      try {
+        // Replace with your actual API key
+        const apiKey = "3fd2be6f0c70a2a598f084ddfb75487c"; // This is a demo key for example purposes
+        const response = await fetch(
+          `https://api.themoviedb.org/3/trending/movie/week?api_key=${apiKey}`
+        );
+        const data = await response.json();
+        setTrendingMovies(data.results.slice(0, 12)); // Limit to 12 movies
+      } catch (error) {
+        console.error("Error fetching trending movies:", error);
+        // Fallback data in case API fails
+        setTrendingMovies([
+          { id: 1, title: "Movie 1", poster_path: "/placeholder1.jpg" },
+          { id: 2, title: "Movie 2", poster_path: "/placeholder2.jpg" },
+          { id: 3, title: "Movie 3", poster_path: "/placeholder3.jpg" },
+          { id: 4, title: "Movie 4", poster_path: "/placeholder4.jpg" },
+          { id: 5, title: "Movie 5", poster_path: "/placeholder5.jpg" },
+          { id: 6, title: "Movie 6", poster_path: "/placeholder6.jpg" },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTrendingMovies();
   }, []);
 
   const featuredShows = [
@@ -65,9 +121,23 @@ const NetflixRebrand = () => {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-hidden">
+      {/* Demo Notification Banner */}
+      {showNotification && (
+        <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-center py-2 z-50 font-bold flex items-center justify-center">
+          <span>THIS IS FOR DEMO PURPOSE ONLY</span>
+          <button 
+            onClick={() => setShowNotification(false)}
+            className="absolute right-4 hover:bg-red-700 rounded-full p-1 transition-colors"
+            aria-label="Close notification"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+      
       {/* Navigation */}
       <nav
-        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        className={`fixed ${showNotification ? 'top-12' : 'top-0'} w-full z-40 transition-all duration-300 ${
           scrollY > 50
             ? "bg-black/90 backdrop-blur-xl"
             : "bg-gradient-to-b from-black/80 to-transparent"
@@ -80,16 +150,28 @@ const NetflixRebrand = () => {
                 <img src={Logo} alt="NeuralFlix" className="w-40 h-16" />
               </div>
               <div className="hidden md:flex space-x-6">
-                <a href="#" className="hover:text-red-400 transition-colors">
+                <a
+                  onClick={() => scrollToSection("home")}
+                  className="hover:text-red-400 transition-colors cursor-pointer"
+                >
                   Home
                 </a>
-                <a href="#" className="hover:text-red-400 transition-colors">
+                <a
+                  onClick={() => scrollToSection("ai-features")}
+                  className="hover:text-red-400 transition-colors cursor-pointer"
+                >
                   AI Picks
                 </a>
-                <a href="#" className="hover:text-red-400 transition-colors">
-                  Neural Series
+                <a
+                  onClick={() => scrollToSection("trending-movies")}
+                  className="hover:text-red-400 transition-colors cursor-pointer"
+                >
+                  Trending
                 </a>
-                <a href="#" className="hover:text-red-400 transition-colors">
+                <a
+                  onClick={() => scrollToSection("ai-personalization")}
+                  className="hover:text-red-400 transition-colors cursor-pointer"
+                >
                   My Mind
                 </a>
               </div>
@@ -113,7 +195,10 @@ const NetflixRebrand = () => {
       </nav>
 
       {/* Hero Section - Featured Content */}
-      <section className="relative h-screen flex items-center overflow-hidden">
+      <section
+        id="home"
+        className="relative h-screen flex items-center overflow-hidden"
+      >
         {/* Dynamic Background */}
         <div className="absolute inset-0">
           <div
@@ -200,7 +285,10 @@ const NetflixRebrand = () => {
       </section>
 
       {/* AI Features Section */}
-      <section className="py-20 bg-gradient-to-b from-black to-gray-900">
+      <section
+        id="ai-features"
+        className="py-20 bg-gradient-to-b from-black to-gray-900"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
@@ -318,8 +406,63 @@ const NetflixRebrand = () => {
         </div>
       </section>
 
+      {/* Trending Movies Section - New Addition */}
+      <section
+        id="trending-movies"
+        className="py-20 bg-gradient-to-b from-black to-gray-900"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold mb-12 bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+            Latest & Trending Movies
+          </h2>
+
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {trendingMovies.map((movie) => (
+                <div key={movie.id} className="group cursor-pointer">
+                  <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg overflow-hidden hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/20">
+                    <div className="aspect-[2/3]">
+                      <img
+                        src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        alt={movie.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src =
+                            "https://via.placeholder.com/500x750?text=No+Image";
+                        }}
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                      <div className="p-4 w-full">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1">
+                            <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                            <span className="text-xs">
+                              {movie.vote_average?.toFixed(1) || "N/A"}
+                            </span>
+                          </div>
+                          <Play className="w-6 h-6 bg-white/20 rounded-full p-1 hover:bg-red-600 transition-colors" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* AI Personalization Features */}
-      <section className="py-20 bg-gradient-to-r from-red-900/30 to-purple-900/30">
+      <section
+        id="ai-personalization"
+        className="py-20 bg-gradient-to-r from-red-900/30 to-purple-900/30"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -679,6 +822,13 @@ const NetflixRebrand = () => {
         </div>
       </footer>
 
+      {/* Floating AI Assistant */}
+      <div className="fixed bottom-6 right-6 z-40">
+        <button className="bg-gradient-to-r from-red-600 to-pink-600 w-14 h-14 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-2xl hover:shadow-red-500/50 animate-pulse">
+          <Brain className="w-6 h-6" />
+        </button>
+      </div>
+
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl md:hidden">
@@ -689,28 +839,33 @@ const NetflixRebrand = () => {
             >
               <X className="w-8 h-8" />
             </button>
-            {["Home", "AI Picks", "Neural Series", "My Mind"].map(
-              (item, index) => (
-                <a
-                  key={index}
-                  href="#"
-                  className="text-3xl font-light hover:text-red-400 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item}
-                </a>
-              )
-            )}
+            <a
+              onClick={() => scrollToSection("home")}
+              className="text-3xl font-light hover:text-red-400 transition-colors cursor-pointer"
+            >
+              Home
+            </a>
+            <a
+              onClick={() => scrollToSection("ai-features")}
+              className="text-3xl font-light hover:text-red-400 transition-colors cursor-pointer"
+            >
+              AI Picks
+            </a>
+            <a
+              onClick={() => scrollToSection("trending-movies")}
+              className="text-3xl font-light hover:text-red-400 transition-colors cursor-pointer"
+            >
+              Trending
+            </a>
+            <a
+              onClick={() => scrollToSection("ai-personalization")}
+              className="text-3xl font-light hover:text-red-400 transition-colors cursor-pointer"
+            >
+              My Mind
+            </a>
           </div>
         </div>
       )}
-
-      {/* Floating AI Assistant */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <button className="bg-gradient-to-r from-red-600 to-pink-600 w-14 h-14 rounded-full flex items-center justify-center hover:scale-110 transition-all duration-300 shadow-2xl hover:shadow-red-500/50 animate-pulse">
-          <Brain className="w-6 h-6" />
-        </button>
-      </div>
     </div>
   );
 };
