@@ -12,6 +12,7 @@ import {
   Headphones,
   Film,
 } from "lucide-react";
+import Logo from "../public/vite.png";
 
 const NetflixRebrand = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -76,7 +77,7 @@ const NetflixRebrand = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <div className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
-                NeuralFlix
+                <img src={Logo} alt="NeuralFlix" className="w-40 h-16" />
               </div>
               <div className="hidden md:flex space-x-6">
                 <a href="#" className="hover:text-red-400 transition-colors">
